@@ -27,79 +27,95 @@
   
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <script type="text/javascript">
+    // Initialization
     var width = 500;
-    var height = 400;
+    var height = 450;
     var centered = null;
+    var g, path;
+    var filmData = null;
 
-    // Define map projection (adapted from base adjustments from here:
-    // https://github.com/mbostock/d3/wiki/Geo-Projections)
-    var projection = d3.geo.albers()
-                      .center([-0.6, 38.7])
-                      .rotate([96,0])
-                      .parallels([29.5, 45.5])//[37.4,-122.2])
-                      .scale(9000)
-                      .translate([width * 6.75, height * 1.25]); // 3360, 500
+    initializeMap();
+    getFilmData();
 
-    // Define path generator
-    var path = d3.geo.path()
-                .projection(projection);
+    // Regex from http://stackoverflow.com/questions/2332811/capitalize-words-in-string/7592235#7592235
+    String.prototype.capitalize = function(lower) {
+      var lowerCased = this.toLowerCase();
+      return lowerCased.replace(/(?:^|\s)\S/g, function(a) { 
+        return a.toUpperCase(); });
+    };
 
-    // Create SVG element
-    var svg = d3.select("body")
-                .append("svg")
-                .attr("width", width)
-                .attr("height", height);
+    function initializeMap() {
+      // Define map projection (adapted from base adjustments from here:
+      // https://github.com/mbostock/d3/wiki/Geo-Projections)
+      var projection = d3.geo.albers()
+                        .center([-0.6, 38.7])
+                        .rotate([96,0])
+                        .parallels([29.5, 45.5])
+                        .scale(10000)
+                        .translate([width * 7.35, height * 1.25]);
 
-    // Add attributes and click handler
-    svg.append("rect")
-      .attr("class", "background")
-      .attr("width", width)
-      .attr("height", height)
-      .on("click", clicked);
+      // Define path generator
+      path = d3.geo.path()
+                  .projection(projection);
 
-    var g = svg.append("g");
-    g.attr("background")
+      // Create SVG element
+      var svg = d3.select("body")
+                  .append("svg")
+                  .attr("width", width)
+                  .attr("height", height);
 
-    // Load in GeoJSON data
-    d3.json("json/san_francisco.geo.json", function(error, json) {
-        if (error) return console.error(error);
+      // Add attributes and click handler
+      svg.append("rect")
+        .attr("class", "background")
+        .attr("width", width)
+        .attr("height", height)
+        .on("click", clicked);
 
-        // Create one clickable target per GeoJSON feature
-        g.append("g")
-          .attr("id", "counties")
-          .selectAll("path")
-          .data(json.features)
-          .enter().append("path")
-          .attr("d", path)
-          .on("click", clicked);
+      g = svg.append("g");
+      g.attr("background")
 
-        // Bind data and create one path per GeoJSON feature
-        g.selectAll("path")
-           .data(json.features)
-           .attr("class", "county-borders")
-           .attr("d", path);
-    });
+      // Load in GeoJSON data
+      d3.json("json/san_francisco.geo.json", function(error, json) {
+          if (error) return console.error(error);
 
+          // Create one clickable target per GeoJSON feature
+          g.append("g")
+            .attr("id", "counties")
+            .selectAll("path")
+            .data(json.features)
+            .enter().append("path")
+            .attr("d", path)
+            .on("click", clicked);
 
-    // logic from http://bl.ocks.org/mbostock/2206590
-    function clicked(d) {
+          // Bind data and create one path per GeoJSON feature
+          g.selectAll("path")
+             .data(json.features)
+             .attr("class", "county-borders")
+             .attr("d", path);
+      });
+    }
+
+    // clicked logic from http://bl.ocks.org/mbostock/2206590
+    function clicked(object) {
       var x, y, k;
 
-      if (d && centered !== d) {
-        var centroid = path.centroid(d);
+      if (object && centered !== object) {
+        var centroid = path.centroid(object);
         x = centroid[0];
         y = centroid[1];
         k = 4;
-        centered = d;
+        centered = object;
+        changeSelectedText(object);
       } else {
         x = width / 2;
         y = height / 2;
         k = 1;
         centered = null;
+        changeSelectedText(null);
       }
 
       g.selectAll("path")
-        .classed("active", centered && function(d) { return d === centered; });
+        .classed("active", centered && function(object) { return object === centered; });
 
       g.transition()
         .duration(750)
@@ -108,8 +124,33 @@
         .style("stroke-width", 1.5 / k + "px");
     }
 
+    function getFilmData() {
+      var url = "https://data.sfgov.org/api/views/yitu-d5am/rows.json";
+      var request = new XMLHttpRequest();
+
+      request.addEventListener('load', requestComplete);
+      request.open("get", url, true);
+      request.send();
+    }
+
+    function requestComplete(event) {
+      console.log(this.responseText);
+      filmData = this.responseText;
+    }
+
+    function changeSelectedText(object) {
+      var location = "Nothing selected.";
+      var textBox = document.getElementById("selected-county-text");
+
+      if (object) {
+        location = object.properties.name.capitalize() + ", " + object.properties.county;  
+      }
+
+      textBox.textContent = location;
+    }
+
   </script>
 
-  <p>Hey there</p>
+  <div id="selected-county-text">Nothing selected.</div>
 </body>
 </html>
