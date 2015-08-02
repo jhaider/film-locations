@@ -3,6 +3,25 @@
 <head>
   <meta charset="utf-8">
   <title>Film Locations in the Bay</title>
+  <style>
+    .background {
+      fill: none;
+      pointer-events: all;
+    }
+
+    #counties {
+      fill: #aaa;
+    }
+
+    #counties .active {
+      fill: #663366;
+    }
+
+    .county-borders {
+      fill: rgb(204,177,204);
+    }
+
+  </style>
 </head>
 <body>
   
@@ -10,7 +29,7 @@
   <script type="text/javascript">
     var width = 500;
     var height = 400;
-    var centered;
+    var centered = null;
 
     // Define map projection (adapted from base adjustments from here:
     // https://github.com/mbostock/d3/wiki/Geo-Projections)
@@ -57,13 +76,13 @@
         // Bind data and create one path per GeoJSON feature
         g.selectAll("path")
            .data(json.features)
-           .attr("id", "county-borders")
-           .attr("d", path)
-           .attr("fill","#663366");
+           .attr("class", "county-borders")
+           .attr("d", path);
     });
 
+
+    // logic from http://bl.ocks.org/mbostock/2206590
     function clicked(d) {
-      console.log("clicked!");
       var x, y, k;
 
       if (d && centered !== d) {
