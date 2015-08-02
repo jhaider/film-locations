@@ -8,35 +8,86 @@
   
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <script type="text/javascript">
-  // <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js">
+    var width = 500;
+    var height = 400;
+    var centered;
 
-    // Width and height
-    var w = 500;
-    var h = 300;
-
-    // Define map projection
-    var projection = d3.geo.mercator()
-                      .translate([w/2, h/2])
-                      .scale([500]);
+    // Define map projection (adapted from base adjustments from here:
+    // https://github.com/mbostock/d3/wiki/Geo-Projections)
+    var projection = d3.geo.albers()
+                      .center([-0.6, 38.7])
+                      .rotate([96,0])
+                      .parallels([29.5, 45.5])//[37.4,-122.2])
+                      .scale(9000)
+                      .translate([width * 6.75, height * 1.25]); // 3360, 500
 
     // Define path generator
-    var path = d3.geo.path();
+    var path = d3.geo.path()
+                .projection(projection);
 
     // Create SVG element
-    var svg = d3.select("body").append("svg").attr({width:w, height: h});
+    var svg = d3.select("body")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+    // Add attributes and click handler
+    svg.append("rect")
+      .attr("class", "background")
+      .attr("width", width)
+      .attr("height", height)
+      .on("click", clicked);
+
+    var g = svg.append("g");
+    g.attr("background")
 
     // Load in GeoJSON data
-    d3.json("json/san_francisco.geo.json", function(json) {
+    d3.json("json/san_francisco.geo.json", function(error, json) {
+        if (error) return console.error(error);
+
+        // Create one clickable target per GeoJSON feature
+        g.append("g")
+          .attr("id", "counties")
+          .selectAll("path")
+          .data(json.features)
+          .enter().append("path")
+          .attr("d", path)
+          .on("click", clicked);
 
         // Bind data and create one path per GeoJSON feature
-        svg.selectAll("path")
+        g.selectAll("path")
            .data(json.features)
-           .enter()
-           .append("path")
+           .attr("id", "county-borders")
            .attr("d", path)
-           .attr("fill","#666666");
-
+           .attr("fill","#663366");
     });
+
+    function clicked(d) {
+      console.log("clicked!");
+      var x, y, k;
+
+      if (d && centered !== d) {
+        var centroid = path.centroid(d);
+        x = centroid[0];
+        y = centroid[1];
+        k = 4;
+        centered = d;
+      } else {
+        x = width / 2;
+        y = height / 2;
+        k = 1;
+        centered = null;
+      }
+
+      g.selectAll("path")
+        .classed("active", centered && function(d) { return d === centered; });
+
+      g.transition()
+        .duration(750)
+        .attr("transform", "translate(" + width / 2 + "," +
+              height / 2 + ")scale(" + k + ")translate(" + (-x) + "," + (-y) + ")")
+        .style("stroke-width", 1.5 / k + "px");
+    }
 
   </script>
 
