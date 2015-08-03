@@ -24,7 +24,7 @@
   </style>
 </head>
 <body>
-  
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBBeKODDPSzguAoRHupY_JljZVZLAMJya4&sensor=false"></script>
   <script src="http://d3js.org/d3.v3.min.js"></script>
   <script type="text/javascript">
     // Initialization
@@ -33,6 +33,21 @@
     var centered = null;
     var g, path;
     var filmData = null;
+    var geocoder = new google.maps.Geocoder();
+    var prepositionsRegex = / from | to | and | between | & | at /;
+    var TITLE_INDEX = 8;
+    var LOCATION_INDEX = 10;
+    var THE_ONE = { location : "Justin Herman Plaza",
+                    zip : "94105"};
+    var locationToRegion = {};
+    var filmToLocations = {};
+    var locationToFilms = {};
+    var sfZips = { 94102 : 1, 94103 : 1, 94104 : 1, 94105 : 1, 94107 : 1,
+                  94108 : 1, 94109 : 1, 94110 : 1, 94111 : 1, 94112 : 1,
+                  94114 : 1, 94115 : 1, 94116 : 1, 94117 : 1, 94118 : 1,
+                  94121 : 1, 94122 : 1, 94123 : 1, 94124 : 1, 94127 : 1,
+                  94128 : 1, 94129 : 1, 94130 : 1, 94131 : 1, 94132 : 1,
+                  94133 : 1, 94134 : 1, 94158 : 1 };
 
     initializeMap();
     getFilmData();
@@ -128,25 +143,121 @@
       var url = "https://data.sfgov.org/api/views/yitu-d5am/rows.json";
       var request = new XMLHttpRequest();
 
-      request.addEventListener('load', requestComplete);
+      request.addEventListener('load', filmRequestComplete);
       request.open("get", url, true);
       request.send();
     }
 
-    function requestComplete(event) {
-      console.log(this.responseText);
-      filmData = this.responseText;
+    function filmRequestComplete(event) {
+      filmData = JSON.parse(this.responseText);
+      fillFilmsAndLocations();
+    }
+
+    function fillFilmsAndLocations() {
+      console.log(filmData);
+      filmData["data"].forEach(function (row) {
+        var title = row[TITLE_INDEX];
+        var location = row[LOCATION_INDEX];
+        
+        if (!filmToLocations[title]) {
+          filmToLocations[title] = [];
+        }
+        filmToLocations[title].push(location);
+
+        if (!locationToFilms[location]) {
+          locationToFilms[location] = [];
+        }
+        locationToFilms[location].push(title);
+      });
+
+      Object.keys(locationToFilms).forEach(function(location, i) {
+        setTimeout(function() {
+          getGeocode(location, null);
+        }, i * 1500);
+      });
+    }
+
+    function getGeocode(address, originalAddress) {
+      console.log(address);
+      if (!address || address == "null" || locationToRegion[address]) return;
+      geocoder.geocode( {'address': address + " San Francisco"}, function(results, status)
+      {
+        if (status == google.maps.GeocoderStatus.OK)
+        {
+          var addressInfo = getAddressInfo(results[0].address_components);
+          if (!originalAddress) {
+            originalAddress = address;
+          }
+
+          if (addressInfo) {
+            locationToRegion[originalAddress] = addressInfo;
+          } else {
+            if (originalAddress == THE_ONE.location) {
+              locationToRegion[THE_ONE.location] = THE_ONE.zip;
+            } else {
+              if (address.indexOf("(") != -1) {
+                // Check if there are parentheses in the string (it might contain an address)
+                var innerRegex = /\(([^)]+)\)/;
+                var matches = address.match(innerRegex);
+                getGeocode(matches[0], originalAddress);
+              } else if (address.match(prepositionsRegex)) {
+                var words = address.split(prepositionsRegex);
+                getGeocode(words[0] + " and " + words[1], originalAddress);
+              } else {
+                console.log("FAILED BUT DIDN'T FIT CASE");
+              }
+            }
+          }
+        }
+        else
+        {
+          console.log("Geocode was not successful for the following reason: " + status);
+        }
+      });
+    }
+
+    function getAddressInfo(address_components) {
+      var county = null;
+      var city = null;
+      var zipCode = null;
+      var wrongState = false;
+      address_components.forEach(function(currentValue) {
+        var type = currentValue.types[0];
+        if (type == "locality") {
+          city = currentValue.long_name;
+        }
+        if (type == "administrative_area_level_2") {
+          county = currentValue.long_name;
+        }
+        if (type == "postal_code") {
+          zipCode = currentValue.long_name;
+        }
+        // Check the location is in California
+        if (type == "administrative_area_level_1" &&
+          currentValue.short_name != "CA") {
+          wrongState = true;
+        }
+      });
+
+      // Found an SF zip code
+      if (city && county == "San Francisco County" && zipCode in sfZips) {
+        return zipCode;
+      } else if (city && county != "San Francisco County" && !wrongState) {
+        return city;
+      } else {
+        return null;
+      }
     }
 
     function changeSelectedText(object) {
       var location = "Nothing selected.";
-      var textBox = document.getElementById("selected-county-text");
+      var textDiv = document.getElementById("selected-county-text");
 
       if (object) {
-        location = object.properties.name.capitalize() + ", " + object.properties.county;  
+        location = object.properties.name.capitalize() + ", " + object.properties.county;
       }
 
-      textBox.textContent = location;
+      textDiv.textContent = location;
     }
 
   </script>
