@@ -68,19 +68,14 @@ var line = d3.svg.line.radial()
     .radius(function(d) { return d.y; })
     .angle(function(d) { return d.x / 180 * Math.PI; });
 
-var svg = d3.select("body").append("svg")
-    .attr("width", diameter)
-    .attr("height", diameter)
-    .append("g")
-    .attr("transform", "translate(" + radius + "," + radius + ")");
-
-var link = svg.append("g").selectAll(".link"),
-    node = svg.append("g").selectAll(".node");
+var svg, link, node;
 
 var TITLE_INDEX = 8;
+var YEAR_INDEX = 9;
 var LOCATION_INDEX = 10;
 var MOVIE_STRING = "Movie..";
 var LOCATION_STRING = "Location..";
+var mapByYear = null;
 
 var locationToNeighborhood = //null;
 {
@@ -904,30 +899,67 @@ var locationToNeighborhood = //null;
 //   locationToNeighborhood = JSON.parse(this.responseText);
 // }
 
-d3.json("json/film_locations.json", function(error, filmData) {
-  if (error) throw error;
+// getFilmData();
 
-  var nodes = cluster.nodes(packageHierarchy(filmData)),
-      links = packageImports(nodes);
+// function getFilmData() {
+//   var url = "https://data.sfgov.org/api/views/yitu-d5am/rows.json";
+//   var request = new XMLHttpRequest();
 
-  link = link
-      .data(bundle(links))
-    .enter().append("path")
-      .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
-      .attr("class", "link")
-      .attr("d", line);
+//   request.addEventListener('load', filmRequestComplete);
+//   request.open("get", url, true);
+//   request.send();
+// }
 
-  node = node
-      .data(nodes.filter(function(n) { return !n.children; }))
-    .enter().append("text")
-      .attr("class", "node")
-      .attr("dy", ".31em")
-      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
-      .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      .text(function(d) { return d.key; })
-      .on("mouseover", mouseovered)
-      .on("mouseout", mouseouted);
-});
+// function filmRequestComplete(event) {
+//   filmData = JSON.parse(this.responseText);
+//   // getLocationMap();
+//   fillFilmsAndLocations();
+// }
+
+buildDiagramForYear("2014");
+
+function buildDiagramForYear(year) {
+  // Clear previous diagram
+  d3.select("svg").remove();
+
+  svg = d3.select("body").append("svg")
+    .attr("width", diameter)
+    .attr("height", diameter)
+    .append("g")
+    .attr("transform", "translate(" + radius + "," + radius + ")");
+
+  link = svg.append("g").selectAll(".link");
+  node = svg.append("g").selectAll(".node");
+
+  d3.json("json/film_locations.json", function(error, filmData) {
+    if (error) throw error;
+
+    if (!mapByYear) {
+      getSources(filmData);
+    }
+
+    var nodes = cluster.nodes(packageHierarchy(mapByYear[year])),
+        links = packageImports(nodes);
+
+    link = link
+        .data(bundle(links))
+      .enter().append("path")
+        .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
+        .attr("class", "link")
+        .attr("d", line);
+
+    node = node
+        .data(nodes.filter(function(n) { return !n.children; }))
+      .enter().append("text")
+        .attr("class", "node")
+        .attr("dy", ".31em")
+        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+        .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+        .text(function(d) { return d.key; })
+        .on("mouseover", mouseovered)
+        .on("mouseout", mouseouted);
+  });
+}
 
 function mouseovered(d) {
   node
@@ -958,35 +990,42 @@ d3.select(self.frameElement).style("height", diameter + "px");
 
 function getSources(filmData) {
   var linkMap = {};
+  mapByYear = {};
 
   filmData["data"].forEach(function (row) {
-    var title = MOVIE_STRING + row[TITLE_INDEX];
-    var location = LOCATION_STRING + locationToNeighborhood[row[LOCATION_INDEX]];
-    //var year = row[YEAR_INDEX];
-    
-    if (!linkMap[title]) {
-      linkMap[title] = {name: title, /*year: year,*/ "imports": []};
-    }
-    if (linkMap[title].imports.indexOf(location) == -1) {
-      linkMap[title].imports.push(location);
-    }
+    if (row[LOCATION_INDEX]) {
+      var title = MOVIE_STRING + row[TITLE_INDEX];
+      var location = LOCATION_STRING + locationToNeighborhood[row[LOCATION_INDEX]];
+      var year = row[YEAR_INDEX];
 
-    if (!linkMap[location]) {
-      linkMap[location] = {name: location, "imports": []};
+      if (!linkMap[year]) {
+        linkMap[year] = {};
+      }
+
+      if (!linkMap[year][title]) {
+        linkMap[year][title] = {name: title, "imports": []};
+      }
+      if (linkMap[year][title].imports.indexOf(location) == -1) {
+        linkMap[year][title].imports.push(location);
+      }
+
+      if (!linkMap[year][location]) {
+        linkMap[year][location] = {name: location, "imports": []};
+      }
+      linkMap[year][location].imports.push(title);
     }
-    linkMap[location].imports.push(title);
   });
 
-  var flattened = Object.keys(linkMap).map(function (key) {
-    return linkMap[key];
-  });
-
-  return flattened;
+  for (var year in linkMap) {
+    mapByYear[year] = Object.keys(linkMap[year]).map(function (key) {
+      return linkMap[year][key];
+    });
+  }
 }
 
 function packageHierarchy(filmData) {
   var map = {};
-  var links = getSources(filmData);
+  var links = filmData;
 
   function find(name, data) {
     var node = map[name], i;
