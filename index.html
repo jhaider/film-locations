@@ -12,7 +12,7 @@
 }
 
 .link {
-  stroke: #;
+  stroke: #663366;
   stroke-opacity: .4;
   fill: none;
   pointer-events: none;
@@ -79,8 +79,8 @@ var link = svg.append("g").selectAll(".link"),
 
 var TITLE_INDEX = 8;
 var LOCATION_INDEX = 10;
-var MOVIE_STRING = "Movie.";
-var LOCATION_STRING = "Location.";
+var MOVIE_STRING = "Movie..";
+var LOCATION_STRING = "Location..";
 
 var locationToNeighborhood = //null;
 {
@@ -967,9 +967,9 @@ function getSources(filmData) {
     if (!linkMap[title]) {
       linkMap[title] = {name: title, /*year: year,*/ "imports": []};
     }
-    //if (linkMap[title].children.indexOf(preferredLocation) == -1) {
-    linkMap[title].imports.push(location);
-    //}
+    if (linkMap[title].imports.indexOf(location) == -1) {
+      linkMap[title].imports.push(location);
+    }
 
     if (!linkMap[location]) {
       linkMap[location] = {name: location, "imports": []};
@@ -993,9 +993,9 @@ function packageHierarchy(filmData) {
     if (!node) {
       node = map[name] = data || {name: name, children: []};
       if (name.length) {
-        node.parent = find(name.substring(0, i = name.lastIndexOf(".")));
+        node.parent = find(name.substring(0, i = name.lastIndexOf("..")));
         node.parent.children.push(node);
-        node.key = name.substring(i + 1);
+        node.key = name.substring(i + 2);
       }
     }
     return node;
