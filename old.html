@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Film Locations in the Bay</title>
+  <style>
+    .background {
+      fill: none;
+      pointer-events: all;
+    }
+
+    #counties {
+      fill: #aaa;
+    }
+
+    #counties .active {
+      fill: #663366;
+    }
+
+    .county-borders {
+      fill: rgb(204,177,204);
+    }
+
+  </style>
+</head>
+<body>
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBBeKODDPSzguAoRHupY_JljZVZLAMJya4&sensor=false"></script>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script type="text/javascript">
+    // Initialization
+    var width = 500;
+    var height = 450;
+    var centered = null;
+    var g, path;
+    var filmData = null;
+    var geocoder = new google.maps.Geocoder();
+    var prepositionsRegex = / from | to | and |between |&| at | near | off of | off /i;
+    var prepositionsNoAnd = / from | to |between |&| at | near | off of | off /i;
+    var TITLE_INDEX = 8;
+    var LOCATION_INDEX = 10;
+    var locationToRegion = {};
+
+    var filmToLocations = {};
+    var locationToFilms = {};
+    var sfZips = { 94102 : 1, 94103 : 1, 94104 : 1, 94105 : 1, 94107 : 1,
+                  94108 : 1, 94109 : 1, 94110 : 1, 94111 : 1, 94112 : 1,
+                  94114 : 1, 94115 : 1, 94116 : 1, 94117 : 1, 94118 : 1,
+                  94121 : 1, 94122 : 1, 94123 : 1, 94124 : 1, 94127 : 1,
+                  94128 : 1, 94129 : 1, 94130 : 1, 94131 : 1, 94132 : 1,
+                  94133 : 1, 94134 : 1, 94158 : 1 };
+
+    //initializeMap();
+    getFilmData();
+
+    // Regex from http://stackoverflow.com/questions/2332811/capitalize-words-in-string/7592235#7592235
+    String.prototype.capitalize = function(lower) {
+      var lowerCased = this.toLowerCase();
+      return lowerCased.replace(/(?:^|\s)\S/g, function(a) { 
+        return a.toUpperCase(); });
+    };
+
+    function initializeMap() {
+      // Define map projection (adapted from base adjustments from here:
+      // https://github.com/mbostock/d3/wiki/Geo-Projections)
+      var projection = d3.geo.albers()
+                        .center([-0.6, 38.7])
+                        .rotate([96,0])
+                        .parallels([29.5, 45.5])
+                        .scale(10000)
+                        .translate([width * 7.35, height * 1.25]);
+
+      // Define path generator
+      path = d3.geo.path()
+                  .projection(projection);
+
+      // Create SVG element
+      var svg = d3.select("body")
+                  .append("svg")
+                  .attr("width", width)
+                  .attr("height", height);
+
+      // Add attributes and click handler
+      svg.append("rect")
+        .attr("class", "background")
+        .attr("width", width)
+        .attr("height", height)
+        .on("click", clicked);
+
+      g = svg.append("g");
+      g.attr("background")
+
+      // Load in GeoJSON data
+      d3.json("json/san_francisco.geo.json", function(error, json) {
+          if (error) return console.error(error);
+
+          // Create one clickable target per GeoJSON feature
+          g.append("g")
+            .attr("id", "counties")
+            .selectAll("path")
+            .data(json.features)
+            .enter().append("path")
+            .attr("d", path)
+            .on("click", clicked);
+
+          // Bind data and create one path per GeoJSON feature
+          g.selectAll("path")
+             .data(json.features)
+             .attr("class", "county-borders")
+             .attr("d", path);
+      });
+    }
+
+    // clicked logic from http://bl.ocks.org/mbostock/2206590
+    function clicked(object) {
+      var x, y, k;
+
+      if (object && centered !== object) {
+        var centroid = path.centroid(object);
+        x = centroid[0];
+        y = centroid[1];
+        k = 4;
+        centered = object;
+        changeSelectedText(object);
+      } else {
+        x = width / 2;
+        y = height / 2;
+        k = 1;
+        centered = null;
+        changeSelectedText(null);
+      }
+
+      g.selectAll("path")
+        .classed("active", centered && function(object) { return object === centered; });
+
+      g.transition()
+        .duration(750)
+        .attr("transform", "translate(" + width / 2 + "," +
+              height / 2 + ")scale(" + k + ")translate(" + (-x) + "," + (-y) + ")")
+        .style("stroke-width", 1.5 / k + "px");
+    }
+
+    function getFilmData() {
+      var url = "https://data.sfgov.org/api/views/yitu-d5am/rows.json";
+      var request = new XMLHttpRequest();
+
+      request.addEventListener('load', filmRequestComplete);
+      request.open("get", url, true);
+      request.send();
+    }
+
+    function filmRequestComplete(event) {
+      filmData = JSON.parse(this.responseText);
+      // getLocationMap();
+      fillFilmsAndLocations();
+    }
+
+    // function getLocationMap() {
+    //   var url = "localhost:8000/locationToRegion.json";
+    //   var request = new XMLHttpRequest();
+
+    //   request.addEventListener('load', locationRegionComplete);
+    //   request.open("get", url, true);
+    //   request.send();
+    // }
+
+    // function locationRegionComplete(event) {
+    //   locationToRegion = JSON.parse(this.responseText);
+    // }
+
+    function fillFilmsAndLocations() {
+      console.log(filmData);
+      filmData["data"].forEach(function (row) {
+        var title = row[TITLE_INDEX];
+        var location = row[LOCATION_INDEX];
+        
+        if (!filmToLocations[title]) {
+          filmToLocations[title] = [];
+        }
+        filmToLocations[title].push(location);
+
+        if (!locationToFilms[location]) {
+          locationToFilms[location] = [];
+        }
+        locationToFilms[location].push(title);
+      });
+
+      Object.keys(locationToFilms).forEach(function(location, i) {
+        if (!locationToRegion[location]) {
+          setTimeout(function() {
+              getGeocode(location, null);
+          }, i * 2500);
+        }
+      });
+
+      // Catch the stragglers
+      var noMatch = {};
+      Object.keys(locationToFilms).forEach(function(location) {
+        if (!locationToRegion[location]) {
+          noMatch[location] = 1;
+        }
+      });
+      console.log(noMatch);
+    }
+
+    function getGeocode(address, originalAddress) {
+      console.log(address);
+      if (!address || address == "null" || locationToRegion[address]) return;
+      geocoder.geocode( {'address': address + " San Francisco"}, function(results, status)
+      {
+        if (status == google.maps.GeocoderStatus.OK)
+        {
+          var addressInfo = getAddressInfo(results[0].address_components);
+          if (!originalAddress) {
+            originalAddress = address;
+          }
+
+          if (addressInfo) {
+            console.log(originalAddress + ' ---- worked');
+            locationToRegion[originalAddress] = addressInfo;
+          } else {
+            if (address.indexOf("(") != -1) {
+              // Check if there are parentheses (it might contain an address)
+              var innerRegex = /\(([^)]+)\)/;
+              var matches = address.match(innerRegex);
+              if (matches) {
+                getGeocode(matches[1], originalAddress);
+              }
+            } else if (address.match(prepositionsNoAnd)) {
+              // Check if there are prepositions, remove/replace them
+              var words = originalAddress.split(prepositionsRegex);
+              getGeocode(words[0] + " and " + words[1], originalAddress);
+            } else {
+              // Have a default: San Francisco
+              locationToRegion[originalAddress] = "San Francisco";
+            }
+          }
+        }
+        else
+        {
+          console.log("Geocode was not successful for the following reason: " + status);
+        }
+      });
+    }
+
+    function getAddressInfo(address_components) {
+      // var county = null;
+      var city = null;
+      var wrongState = false;
+      var neighborhood = null; // or natural_feature, point_of_interest
+      address_components.forEach(function(component) {
+        var type = component.types[0];
+        if (type == "locality") {
+          city = component.long_name;
+        }
+        if (type == "neighborhood" || type == "natural_feature"
+            || type == "point_of_interest" ) {
+          neighborhood = component.long_name;
+        }
+        // Check the location is in California
+        if (type == "administrative_area_level_1" &&
+          component.short_name != "CA") {
+          wrongState = true;
+        }
+      });
+      if (neighborhood && !wrongState) {
+        return neighborhood;
+      } else {
+        return null;
+      }
+    }
+
+    function changeSelectedText(object) {
+      var location = "Nothing selected.";
+      var textDiv = document.getElementById("selected-county-text");
+
+      if (object) {
+        location = object.properties.name.capitalize() + ", " + object.properties.county;
+      }
+
+      textDiv.textContent = location;
+    }
+
+  </script>
+
+  <div id="selected-county-text">Nothing selected.</div>
+</body>
+</html>
