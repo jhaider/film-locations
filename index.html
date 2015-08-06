@@ -12,7 +12,7 @@
 }
 
 .link {
-  stroke: #663366;
+  stroke: rgb(180,110,245);
   stroke-opacity: .4;
   fill: none;
   pointer-events: none;
@@ -25,11 +25,11 @@
 }
 
 .node--source {
-  fill: #2ca02c;
+  fill: rgb(25,163,131);
 }
 
 .node--target {
-  fill: #d62728;
+  fill: rgb(68,55,239);
 }
 
 .link--source,
@@ -39,14 +39,17 @@
 }
 
 .link--source {
-  stroke: #d62728;
+  stroke: rgb(68,55,239);
 }
 
 .link--target {
-  stroke: #2ca02c;
+  stroke: rgb(25,163,131);
 }
 
 </style>
+<div id="bundle-diagram"></div>
+<div id="pie-chart"></div>
+
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
 <script src="http://rawgithub.com/desmosinc/scrubber/master/scrubber.js"></script>
@@ -72,7 +75,6 @@ var line = d3.svg.line.radial()
     .angle(function(d) { return d.x / 180 * Math.PI; });
 
 var svg, link, node;
-
 var TITLE_INDEX = 8;
 var YEAR_INDEX = 9;
 var LOCATION_INDEX = 10;
@@ -80,7 +82,13 @@ var MOVIE_STRING = "Movie..";
 var LOCATION_STRING = "Location..";
 var mapByYear = null;
 var locationToNeighborhood = {};
-
+var totalMovies = 0;
+var scrubber = new ScrubberView();
+var minYear, maxYear;
+var years = null;
+var display = document.createElement('div');
+var bundleDiagram = document.getElementById("bundle-diagram");
+bundleDiagram.appendChild(display);
 getLocationMap();
 
 function getLocationMap() {
@@ -97,36 +105,28 @@ function locationHoodComplete(event) {
   d3.json("json/film_locations.json", function(error, filmData) {
     if (error) throw error;
     getSources(filmData);
-    buildDiagramForYear("2015");
     display.innerHTML = "Year Displayed: 2015";
   });
 }
 
-var scrubber = new ScrubberView();
-var minYear, maxYear;
-var years = null;
-var display = document.createElement('div');
-document.body.appendChild(display);
-
 function initializeScrubber() {
-  document.body.appendChild(scrubber.elt);
+  bundleDiagram.appendChild(scrubber.elt);
   scrubber.min(1);
   scrubber.max(years.length);
   scrubber.step(1);
   scrubber.value(years.length);
   scrubber.orientation('horizontal'); // 'horizontal'
-  // scrubber.style["width"] = "400px";
+  scrubber.elt.style["width"] = "600px";
 }
 
 scrubber.onValueChanged = function (value) {
-  buildDiagramForYear(years[value - 1]);
   display.innerHTML = "Year Displayed: " + years[value - 1];
+  buildDiagramForYear(years[value - 1]);
 }
 
 function buildDiagramForYear(year) {
-  // Clear previous diagram
-  d3.select("svg").remove();
-  svg = d3.select("body").append("svg")
+  d3.select("svg").remove();   // Clear previous diagram
+  svg = d3.select("#bundle-diagram").append("svg")
     .attr("width", diameter)
     .attr("height", diameter)
     .append("g")
@@ -170,6 +170,7 @@ function getSources(filmData) {
   filmData["data"].forEach(function (row) {
     if (row[LOCATION_INDEX]) {
       var title = MOVIE_STRING + row[TITLE_INDEX];
+      var listedLocation = locationToNeighborhood[row[LOCATION_INDEX]];
       var location = LOCATION_STRING + locationToNeighborhood[row[LOCATION_INDEX]];
       var year = row[YEAR_INDEX];
       if (year < minYear) {
@@ -183,6 +184,7 @@ function getSources(filmData) {
       }
       // Initialize
       if (!linkMap[year][title]) {
+        totalMovies++;
         linkMap[year][title] = {name: title, "imports": []};
       }
       // Check duplicate locations
@@ -204,7 +206,6 @@ function getSources(filmData) {
   }
 
   years = Object.keys(mapByYear);
-
   initializeScrubber();
 }
 </script>
