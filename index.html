@@ -50,6 +50,7 @@
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
 <script src="http://rawgithub.com/desmosinc/scrubber/master/scrubber.js"></script>
+<script src="js/third-party-helper.js"></script>
 <link rel="stylesheet" href="http://rawgithub.com/desmosinc/scrubber/master/scrubber.css">
 <script>
 
@@ -78,871 +79,53 @@ var LOCATION_INDEX = 10;
 var MOVIE_STRING = "Movie..";
 var LOCATION_STRING = "Location..";
 var mapByYear = null;
+var locationToNeighborhood = {};
 
-var locationToNeighborhood = //null;
-{
-  "Randall Musuem":"The Castro",
-  "555 Market St.":"South Beach",
-  "Mason & California Streets (Nob Hill)":"Lower Nob Hill",
-  "Justin Herman Plaza":"Embarcadero",
-  "200 block Market Street":"Financial District",
-  "Epic Roasthouse (399 Embarcadero)":"Embarcadero",
-  "City Hall":"San Francisco",
-  "Polk & Larkin Streets":"South of Market",
-  "Rainforest Café (145 Jefferson Street)":"North Beach",
-  "Crissy Field":"Presidio",
-  "Powell from Bush and Sutter":"Lower Nob Hill",
-  "Broderick from Fulton to McAlister":"North of the Panhandle",
-  "Coit Tower":"North Beach",
-  "20th and Folsom Streets":"Mission District",
-  "Golden Gate Park":"Golden Gate Park",
-  "Filbert St. from Jones to Mason":"Russian Hill",
-  "Leavenworth from Filbert & Francisco St":"Russian Hill",
-  "Chestnut St. from Larkin to Columbus":"Russian Hill",
-  "Francisco St from Larkin to Polk":"Russian Hill",
-  "Broadway from Mason to Taylor":"Russian Hill",
-  "Taylor St. from Broadway to Filbert":"Russian Hill",
-  "Cliff House (1090 Point Lobos Avenue)":"Sea Cliff",
-  "San Francisco Bay":"San Francisco Bay",
-  "Fairmont Hotel (950 Mason Street, Nob Hill)":"Nob Hill",
-  "Curran Theater (445 Geary Street)":"Tenderloin",
-  "Mel's Drive-In (Corner of Van Ness & Mission Street, Mission District)":"Mission District",
-  "3355 Geary Blvd.":"Richmond District",
-  "Embarcadero Freeway":"Embarcadero",
-  "San Francisco Chronicle (901 Mission Street at 15th Street)":"South of Market",
-  "Broadway (North Beach)":"North Beach",
-  "Intersection of California at Polk":"Polk Gulch",
-  "Grant between Bush and Broadway":"Chinatown",
-  "Intersection of Broadway at Kearney":"North Beach",
-  "Market between Stuart and Van Ness":"Embarcadero",
-  "Treasure Lisland, Building #1, Ave of the Palms":"Treasure Island",
-  "Lombard at Hyde":"Russian Hill",
-  "601 Buena Vista Ave West at Java St.":"Ashbury Heights",
-  "420 Jones St. at Ellis St.":"Tenderloin",
-  "Broadway between Powell and Davis":"Russian Hill",
-  "Columbus between Bay and Washington":"Russian Hill",
-  "California between Kearney and Davis":"Financial District",
-  "Pine between Kearney and Davis":"Financial District",
-  "Ocean Beach":"Ocean Beach",
-  "75 California Street":"Financial District",
-  "Grace Cathedral Episcopal Church (1100 California Street)":"Nob Hill",
-  "Hills Brothers Plaza (Embarcadero at Harrison Street)":"Downtown Oakland",
-  "San Francisco International Airport":"San Francisco International Airport",
-  "Hyde Street Cable Car":"Fisherman's Wharf",
-  "Chinatown":"Chinatown",
-  "Burger Island (901 3rd Street, China Basin)":"South of Market",
-  "Van Ness Avenue":"San Francisco",
-  "Taylor and Jefferson Streets (Fisherman's Wharf)":"North Beach",
-  "Port of San Francisco ":"Embarcadero",
-  "Lefty O' Doul Drawbridge/ 3rd Street Bridge (3rd Street, China Basin)":"South of Market",
-  "Golden Gate Bridge":"Golden Gate Bridge",
-  "Potrero Hill":"Potrero Hill",
-  "Gibb Street (Chinatown)":"Financial District",
-  "2104 Broadway":"Pacific Heights",
-  "Raw Hide II (280 Seventh Street)":"South of Market",
-  "Pier 7 (The Embarcadero)":"Embarcadero",
-  "Kearney Street (Telegraph Hill)":"North Beach",
-  "Hall of Justice (850 Bryant Street)":"South of Market",
-  "2930 Vallejo Street":"Pacific Heights",
-  "1158-70 Montgomery Street":"Financial District",
-  "Steinhart Aquarium (California Academy of Sciences, Golden Gate Park)":"Golden Gate Park",
-  "Tosca Café (242 Columbus Avenue)":"Financial District",
-  "Transbay Terminal (Mission Street at 1st Street)":"South Beach",
-  "Yuerba Buena Center for the Arts":"Western Addition",
-  "Montgomery & Market Streets":"Financial District",
-  "1155 Filbert Street at Hyde":"Russian Hill",
-  "Treasure Island":"Treasure Island",
-  "Postcard Row, Alamo Square, Hayes Valley":"Hayes Valley",
-  "Harry's Bar on Fillmore":"Fillmore District",
-  "Nobles Alley":"North Beach",
-  "Caffe Trieste":"San Francisco",
-  "Palace of Fine Arts":"San Francisco",
-  "1101 Filbert St. ":"Russian Hill",
-  "Saints Peter & Paul Church":"North Beach",
-  "Green St. & Grant Ave.":"North Beach",
-  "Filbert St. & Leavenworth":"Russian Hill",
-  "Pine St. & Grant":"Financial District",
-  "Way Faire Inn on Leidsdorff":"San Francisco",
-  "Tosca Café (242 Columbus Avenue, North Beach)":"Financial District",
-  "Alcatraz Island":"San Francisco",
-  "Pier 43 1/2":"Bayview",
-  "The Ramp Restaurant":"San Francisco",
-  "303-305 S. Van Ness":"Mission District",
-  "3563 20th St.":"Mission District",
-  "Taylor & Green St.":"Russian Hill",
-  "Grant & Washington St.":"Chinatown",
-  "2934 24th St.":"Mission District",
-  "1138 Alabama St":"Mission District",
-  "2915 16th St.":"Mission District",
-  "Trolly Car from Market and 11th":"Tenderloin",
-  "Real Guitars":"San Francisco",
-  "Aub Zam Zam Bar":"San Francisco",
-  "790 Ulloa ":"West of Twin Peaks",
-  "SFO International Airport Terminal 3":"San Francisco",
-  "2178 Palou Ave.":"Bayview",
-  "South Park":"South Park",
-  "Jones & Pacific":"Nob Hill",
-  "Pacific & Divisadero":"Pacific Heights",
-  "Lombard & Hyde":"Russian Hill",
-  "5546 Geary Ave":"Central Richmond",
-  "2898 Broadway":"Pacific Heights",
-  "Motel Capri":"San Francisco",
-  "Marina Green":"Marina District",
-  "Heald College":"South of Market",
-  "Marina Blvd from Leguna to Baker":"Marina District",
-  "330 Santa Clara Ave.":"Saint Francis Wood",
-  "200 Post St. ":"San Francisco",
-  "2179 48th Ave":"Sunset District",
-  "1122 Folsom Street":"South of Market",
-  "St. Peter & Paul's Church (666 Filbert Street, Washington Square)":"Washington Square Park",
-  "628 Cole Street":"Haight-Ashbury",
-  "Aquatic Park (Jefferson Street)":"Aquatic Park",
-  "Lombard Street":"Russian Hill",
-  "Ferry Building":"Embarcadero",
-  "Fisherman's Wharf":"Fisherman's Wharf",
-  "Ina Coolbrith Park (1700 Taylor Street)":"Russian Hill",
-  "0-100 block Halleck Street":"Financial District",
-  "Café Cantata (2040 Union Street)":"Cow Hollow",
-  "Bayshore Blvd near Cesar Chavez (Bayview)":"Bayview",
-  "Taylor & Vallejo Streets (Russian Hill)":"Russian Hill",
-  "SF General Hospital Center (1001 Potrero Avenue, Potrero Hill)":"Mission District",
-  "McClaren Park (Vistacon Valley)":"John McLaren Park",
-  "Mark Hopkins Hotel (999 California Street)":"Lower Nob Hill",
-  "Marina Green (Marina District)":"Marina District",
-  "Mansell & University Streets (Vistacon Valley)":"Visitacion Valley",
-  "Larkin & Francisco Streets (Russian Hill)":"Russian Hill",
-  "Larkin & Chestnut Streets (Russian Hill)":"Russian Hill",
-  "Kennedy Hotel (226 Embarcadero at Howard Street)":"South of Market",
-  "John Muir Drive (Lake Merced)":"Lakeshore",
-  "Intersection of York & Peralta (Bernal Heights)":"Bernal Heights",
-  "Filbert & Taylor Streets (Russian Hill)":"Russian Hill",
-  "Enrico's Café (504 Broadway)":"North Beach",
-  "Columbus & Lombard Streets (North Beach)":"Russian Hill",
-  "Cesar Chavez & Mission Street (Mission)":"Mission District",
-  "Candlestick Park Exit, Highway 101":"San Francisco",
-  "Brocklebank Apartments (1000 Mason Street)":"Nob Hill",
-  "Bay Bridge":"San Francisco",
-  "2700 Vallejo Street (Pacific Heights)":"Pacific Heights",
-  "20th & Vermont Streets (Potrero Hill)":"Potrero Hill",
-  "1153-57 Taylor Street":"Tenderloin",
-  "California Academy of Sciences (Golden Gate Park)":"Golden Gate Park",
-  "1400 18th Street":"Potrero Hill",
-  "1627 Haight Street":"Haight-Ashbury",
-  "Green Valley Restaurant (510 Green Street Near Grant)":"San Francisco",
-  "Department of Public Health (101 Grove Street at Polk, Civic Center)":"Civic Center",
-  "Royan Hotel (405 Valencia Street, Mission District)":"Mission Dolores",
-  "101 Henry Adams Place":"South of Market",
-  "The Lexington Club (3464 19th Street at Lexington)":"Mission District",
-  "Mission Delores Park (Mission District) via J-Church MUNI Train":"Mission District",
-  "Li Po (916 Grant Avenue at Washington, Chinatown)":"Chinatown",
-  "Golden Dragon Restaurant (816 Washington Street at Grant)":"Chinatown",
-  "387 Fair Oaks at 25th Street":"Mission District",
-  "22nd and Carolina Streets (Potrero Hill)":"Potrero Hill",
-  "San Francisco Public Library Main Branch (100 Larkin Street)":"Civic Center",
-  "Bix Restaurant (56 Gold Street)":"Financial District",
-  "Mission Delores (3321 16th Street, Mision District)":"The Castro",
-  "The Castro":"The Castro",
-  "Twin Peaks":"Twin Peaks",
-  "Sound Factory (1st and Harrison Streets)":"South Beach",
-  "Java House (Pier 40, Embarcadero)":"Embarcadero",
-  "Alta Plaza Park":"Pacific Heights",
-  "82 & 67 Rico Way (Marina District)":"Marina District",
-  "24th Street between Mission Street and Potrero Avenue":"Mission District",
-  "La Rondalla (Valencia and 20th Streets)":"Mission District",
-  "Filbert Steps, Filbert Street":"North Beach",
-  "The Malloch Apartment Building (1360 Montgomery Street)":"North Beach",
-  "California & Powell ":"Chinatown",
-  "Alioto Park":"Mission District",
-  "Columbus & Pacific Ave":"Financial District",
-  "University Club":"Country Club",
-  "Filbert St. from Hyde to Leavenworth":"Russian Hill",
-  "California St from Mason to Kearny":"Nob Hill",
-  "Mission Delores Park (Mission District)":"The Castro",
-  "Marina Green, Marina District":"Marina District",
-  "Washington Square, North Beach":"Washington Square Park",
-  "The Embarcadero":"Embarcadero",
-  "San Francisco Drydock (20th and Illinois Streets)":"Dogpatch",
-  "Portsmouth Square (Chinatown)":"Financial District",
-  "Mt. Davidson Cross, Mt. Davidson":"Mount Davidson",
-  "Kezar Stadium, Golden Gate Park":"Golden Gate Park",
-  "Holiday Inn Select Downtown Hotel (750 Kearney Street)":"Financial District",
-  "Forest Hill Station- MUNI":"West of Twin Peaks",
-  "Dante Building (1606 Stockton Street at Union)":"North Beach",
-  "California Hall (625 Polk Street, Van Ness/Civic Center)":"Civic Center",
-  "Bank of America Building (555 California Street)":"Financial District",
-  "Powell & California Streets":"Chinatown",
-  "Market Street (from 6th- 4th Streets)":"San Francisco",
-  "Market & Steuart Streets (Financial District)":"Embarcadero",
-  "Mark Hopkins Intercontinental Hotel (1 Nob Hill Circle)":"Lower Nob Hill",
-  "Chambord Apartments (1298 Sacramento Street at Jones)":"Nob Hill",
-  "Union Square":"Union Square",
-  "Southern Pacific Memorial Hospital (1400 Fell Street)":"Panhandle",
-  "Webster Street":"San Francisco",
-  "2107 Union Street":"Cow Hollow",
-  "2100 Green Street":"Cow Hollow",
-  "Telegraph Hill Blvd (Telegraph Hill)":"North Beach",
-  "Hyde Street & Lombard Street":"Russian Hill",
-  "Baker Beach":"Baker Beach",
-  "Elbo Room (647 Valencia Street)":"Mission Dolores",
-  "Palace of Fine Arts (3301 Lyon Street)":"Marina District",
-  "19 Green Street (North Beach)":"North Beach",
-  "1138 Filbert Street":"Russian Hill",
-  "Mario's Bohemian Cigar Store (Washington Square)":"Washington Square Park",
-  "Wells Fargo Bank (1 California Street, Financial District)":"Financial District",
-  "The Sea Captain's Chest (Fisherman's Wharf)":"Fisherman's Wharf",
-  "Candlestick Park":"Bayview",
-  "100 St. Germain Avenue":"Clarendon Heights",
-  "Nob Hill":"Nob Hill",
-  "Postcard Row (Alamo Square, Hayes Valley)":"Hayes Valley",
-  "San Francisco General Hospital Medical Center (1001 Potrero Avenue, Potrero Hill)":"Mission District",
-  "5th and Beale Streets":"San Francisco",
-  "Westin St. Francis Hotel (335 Powell Street, Union Square)":"Lower Nob Hill",
-  "War Memorial Opera House (401 Van Ness Avenue)":"Civic Center",
-  "Sutter & Baker Streets":"Western Addition",
-  "Sacramento & Hyde Streets (Nob Hill)":"Nob Hill",
-  "Octavia & Hayes Streets (Hayes Valley)":"Hayes Valley",
-  "Montgomery & Pine Streets (Financial District)":"Financial District",
-  "24th and Castro Streets (Noe Valley)":"Noe Valley",
-  "Fort Point, Presidio":"Presidio",
-  "Alco Plaza":"Financial District",
-  "Hyatt Regency Hotel (5 Embarcadero Center)":"Embarcadero",
-  "The Barbary Coast":"Tenderloin",
-  "140 Maiden Lane":"San Francisco",
-  "Embarcadero Street Station- BART ":"San Francisco",
-  "California & Davis St":"Financial District",
-  "Broadway & Sansome":"North Beach",
-  "Stockton & Clay St":"Chinatown",
-  "Pier 1":"Embarcadero",
-  "Potrero &San Bruno":"Potrero Hill",
-  "University of California Hastings College of the Law":"Civic Center",
-  "435 23rd Street at Ilinois":"Central Waterfront",
-  "Muni Metro East (501 Cesar Chavez)":"Bayview",
-  "Hobart Building (582 Market Street)":"Financial District",
-  "Vesuvio Café (255 Columbus Avenue)":"Financial District",
-  "Telegraph Hill":"Telegraph Hill",
-  "Broadway Tunnel (Russian Hill)":"Broadway Tunnel West Mini Park",
-  "Hamlin Hotel (385 Eddy Street)":"Tenderloin",
-  "The Ferry Building":"Embarcadero",
-  "Hunters Point":"Hunters Point",
-  "Lombard & Hyde Streets":"Russian Hill",
-  "Horace Mann School (3351 23rd Street)":"Mission District",
-  "Chinatown Gate":"Marina District",
-  "Lusty Lady Bar (North Beach)":"North Beach",
-  "Willy's Barber Shop":"San Francisco",
-  "Doc's Clock":"South Beach",
-  "1890 Clay St.":"Pacific Heights",
-  "222 Mason St. ":"Tenderloin",
-  "24th and Church St. ":"Noe Valley",
-  "On Board the SS President Cleveland, docked at Pier 50":"South of Market",
-  "Marine Fireman's Union Headquarters":"San Francisco",
-  "Duboce Park":"Duboce Park",
-  "Danilo's Bakery (Green Street & Bannam Place)":"North Beach",
-  "Naked Lunch":"San Francisco",
-  "Triton Hotel (342 Grant Street)":"Financial District",
-  "Marathon Plaza (303 2nd Street)":"South Beach",
-  "Texas & 19th Streets (Potrero Hill)":"Potrero Hill",
-  "Balboa at 22nd Avenue":"Central Richmond",
-  "Cal-Mart Supermarket":"San Francisco",
-  "York & 24th St.":"Mission District",
-  "Vallejo Street Garage":"Russian Hill",
-  "Grant St. at Bush St.":"Chinatown",
-  "Washington Square":"Washington Square Park",
-  "\"Metzger's Apt\" 151 Alice B. Toklas Pl.":"San Francisco",
-  "Market St. overpass":"Buena Vista",
-  "Westin St. Francis Hotel (335 Powell Street)":"Lower Nob Hill",
-  "The Embarcadero/ Ferry Building":"Embarcadero",
-  "Fort Point (Presidio, Golden Gate National Recreation Area)":"San Francisco",
-  "South Park (Between 2nd and 3rd Streets, Brannan and Bryant Streets)":"San Francisco",
-  "West Chrissy Field (Presidio, Golden Gate National Recreation Area)":"San Francisco",
-  "Building 924, Presido (Golden Gate National Recreation Area)":"Golden Gate National Recreation Area",
-  "Pier 39":"North Beach",
-  "20th & Connecticut Streets (Potrero Hill)":"Potrero Hill",
-  "Castro Theatre (429 Castro Street, The Castro)":"The Castro",
-  "North Beach Video (1398 Grant Avenue at Green)":"North Beach",
-  "Center for the Arts, Yerba Buena Gardens (701 Mission Street)":"South of Market",
-  "Moose's Restaurant (1652 Stockton)":"North Beach",
-  "Roaring Twenties Nightclub (555 Broadway at Columbus)":"Financial District",
-  "George Washington High School (600 32nd Avenue )":"Richmond District",
-  "Sheraton Palace Hotel (2 Montgomery Street, Financial District)":"Financial District",
-  "2632 Larkin Street at Lombard":"Russian Hill",
-  "1 Monthgomery Street at Post":"Financial District",
-  "2230 Sacramento Street":"Pacific Heights",
-  "400 Montgomery Street":"Financial District",
-  "90 Gold Street":"Financial District",
-  "Kohl Building (400 Montgomery Street)":"Financial District",
-  "Varennes Alley between Filbert and Union":"North Beach",
-  "Folsom Street & Embarcadero":"Mission District",
-  "Presidio, Golden Gate National Recreation Area":"Presidio",
-  "The Walden House, Buena Vista Park":"San Francisco",
-  "Café Trieste (609 Vallejo)":"North Beach",
-  "Sutter & Buchannan Streets":"Western Addition",
-  "Sokoji-Soto Zen Buddhist Temple (1691 Laguna Street)":"Western Addition",
-  "Pawtrero Hill Bathhouse & Feed Co. (199 Mississippi Street)":"Potrero Hill",
-  "Hayes Valley Care (601 Laguna Street, Hayes Valley)":"Hayes Valley",
-  "Laguna & Sacramento Streets (Pacific Heights)":"Pacific Heights",
-  "Flood Building (870 Market Street)":"Tenderloin",
-  "Fiesta Laundromat (898 S. Van Ness Ave., Mission)":"Mission District",
-  "California & Larkin Streets (Nob Hill)":"Polk Gulch",
-  "Asian Art Museum (200 Larkin Street, Civic Center)":"Civic Center",
-  "Andrew S. Hallidie Plaza (Market & Powell Streets)":"Tenderloin",
-  "430 Vallejo Street (Telegraph Hill)":"North Beach",
-  "Golden Gate & Steiner Streets (Hayes Valley)":"Alamo Square",
-  "Fort Mason (Golden Gate National Recreation Area)":"Golden Gate National Recreation Area",
-  "Candlestick Park (602 Jamestown Ave.)":"Bayview",
-  "TransAmerica Pyramid (600 Montgomery Street)":"Financial District",
-  "Folsom Street (SOMA)":"South of Market",
-  "Broadway and Columbus Avenue (North Beach)":"Financial District",
-  "755 Vallejo Street":"Russian Hill",
-  "Neiman Marcus (150 Stockton Street, Union Square)":"Tenderloin",
-  "Mason Street at Jackson":"Nob Hill",
-  "M.H. de Young Memorial Museum (Golden Gate Park)":"Golden Gate Park",
-  "California & Grant Streets":"Financial District",
-  "Bush & Kearny":"Financial District",
-  "Pine St. & Davis St":"Financial District",
-  "Sacramento & Front St.":"Financial District",
-  "Broadway & Columbus":"Financial District",
-  "Post & Jones St.":"Lower Nob Hill",
-  "Mission & Fremont St":"South Beach",
-  "Embarcadero & Washington":"Pacific Heights",
-  "Mission & Beal":"South Beach",
-  "Ross Alley (Chinatown)":"Chinatown",
-  "Bush and Sutter Streets":"Lower Nob Hill",
-  "634 Raycliff Terrace":"Pacific Heights",
-  "Conservatory of Flowers (Golden Gate Park)":"Golden Gate Park",
-  "2810 Pacific Avenue":"Pacific Heights",
-  "San Francisco Art Institute (800 Chestnut Street)":"Russian Hill",
-  "Sheraton Palace Hotel (639 Market Street)":"Financial District",
-  "1160 Taylor Street":"Nob Hill",
-  "The Final Final (2990 Baker Street)":"Cow Hollow",
-  "391 Pennsylvania Avnue at 19th Street":"Potrero Hill",
-  "Pier 39 (Fisherman's Wharf)":"North Beach",
-  "Administration Building (Treasure Island)":"Treasure Island",
-  "Mark Hopkins Intercontinental Hotel (1 Nob Hill Circle, Nob Hill)":"Lower Nob Hill",
-  "Bimbo's 365 Club (1025 Columbus Avenue, North Beach)":"Russian Hill",
-  "1227 Montgomery Street (Telegraph Hill)":"North Beach",
-  "720 Steiner Street (Hayes Valley)":"Alamo Square",
-  "Lafayette Park (Pacific Heights)":"Pacific Heights",
-  "Grant Avenue (North Beach)":"North Beach",
-  "1 Post Street":"Financial District",
-  "901 Union Street":"Russian Hill",
-  "Hang Ah Alley (Chinatown)":"Chinatown",
-  "180 Manchester Street":"Bernal Heights",
-  "722 Steiner Street":"Alamo Square",
-  "California & Hyde Streets":"Nob Hill",
-  "Sutro Baths  ":"Sea Cliff",
-  "Jawbone at 99 Rhode Island St. ":"South of Market",
-  "Starbucks at 333 O'Farrell St.":"Tenderloin",
-  "Mission Arts Center":"Mission Art Center",
-  "Punjab":"San Francisco",
-  "Tiburon Hiking Trail, Tiburon, CA":"Tiburon",
-  "601 Buena Vista West":"Ashbury Heights",
-  "Church and Duboce Muni Station":"San Francisco",
-  "20 Hill Street":"Mission District",
-  "2190 Washington Street (Pacific Heights)":"Pacific Heights",
-  "722 Steiner Street (Postcard Row, Alamo Square, Hayes Valley)":"Hayes Valley",
-  "Market & Castro Street":"The Castro",
-  "424 Sansome Street":"Financial District",
-  "100 Embarcadero Street":"Financial District",
-  "Pier 7":"San Francisco",
-  "9 Calhoun Terrace":"North Beach",
-  "3122 16th Street":"Mission Dolores",
-  "Jones Street at Bush":"Lower Nob Hill",
-  "2017 23rd Street":"Potrero Hill",
-  "Larkin & Fulton":"Civic Center",
-  "923 Vermont St.":"Potrero Hill",
-  "Claire Lilienthal Elementary School":"Presidio Heights",
-  "1536 Noe St.":"Noe Valley",
-  "2nd St & Howard":"South Beach",
-  "Embarcadero Street":"North Beach",
-  "Jefferson St. at Powell St.":"North Beach",
-  "Vallejo St. Garage, 766 Vallejo St.":"Russian Hill",
-  "Palace of Fine Arts: 3306 Lyon St.":"Marina District",
-  "Romain St.":"San Francisco",
-  "S. Van Ness":"San Francisco",
-  "305 Hugo Street":"Inner Sunset",
-  "North Beach":"North Beach",
-  "Civic Center Plaza":"Civic Center",
-  "Mission Dolores Park (Mission District)":"The Castro",
-  "Pine and Leavensworth":"Lower Nob Hill",
-  "Mission St., Embarcadero, and Front between Clay and Market":"Embarcadero",
-  "Cathedral Hill Hotel (1101 Van Ness Avenue, Civic Center)":"Western Addition",
-  "20th & DeHaro Streets (Potrero Hill)":"Potrero Hill",
-  "Pierce & California Streets (Pacific Heights)":"Pacific Heights",
-  "Eber Electronics (2355 Market Street, Castro)":"The Castro",
-  "301 Howard Street":"South Beach",
-  "skyline/ exterior scenes":"San Francisco",
-  "2601 Lyon Street":"Presidio",
-  "Bank of America Building (555 California Street, Financial District)":"Financial District",
-  "Lombard & Divisadero Streets (Marina District)":"Cow Hollow",
-  "Veterans' War Memorial Building (401 Van Ness Avenue)":"Civic Center",
-  "Sacramento St., Between Pierce & Broderick Streets ":"Pacific Heights",
-  "Broadway, Between Franklin & Laguna Streets":"Pacific Heights",
-  "The Tamalpias Building (1201 Greenwich Street at Hyde)":"Russian Hill",
-  "First Bank (550 Montgomery Street at Commercial)":"Financial District",
-  "War Memorial Building (401 Van Ness Avenue)":"Civic Center",
-  "Kearney & Pine St.":"Financial District",
-  "Eddy & Taylor St.":"Tenderloin",
-  "Buena Vista Park (Haight Street at Buena Vista)":"Buena Vista",
-  "Hayes Street at Laguna":"Hayes Valley",
-  "Mel's Drive-In (Corner South Van Ness & Mission St.)":"South of Market",
-  "Sutro Baths (Point Lobos Avenue)":"Sea Cliff",
-  "City Lights Bookstore (261 Columbus)":"Financial District",
-  "Washington Square Bar & Grill (1707 Powell)":"Russian Hill",
-  "Castagnola's Restaurant (Fisherman's Wharf)":"Fisherman's Wharf",
-  "Conservatory of Flowers, Golden Gate Park":"Golden Gate Park",
-  "Maiden Lane":"San Francisco",
-  "Condor Club (Columbus and Broadway)":"Financial District",
-  "Chase H & Q  (1 Bush Street at Sansome)":"Financial District",
-  "Marriot Hotel (55 4th Street at Market)":"South of Market",
-  "Vallejo Street at Sansome":"North Beach",
-  "100 Market Street at 6th Street":"Financial District",
-  "32 Napier Lane":"North Beach",
-  "United Nations Plaza (Civic Center)":"Civic Center",
-  "Pier 33 (Embarcadero)":"Embarcadero",
-  "Ramada Plaza Hotel Downtown (1231 Market Street, Civic Center)":"Mid-Market",
-  "Transamerica Building (600 Montgomery Street at Clay)":"Financial District",
-  "Chrissy Field":"Presidio",
-  "Fior d' Italia (601 Union Street at Stockton)":"Park",
-  "Japanese Tea Garden (Hagiwara Tea Garden Drive, Golden Gate Park)":"Golden Gate Park",
-  "Washington Square (North Beach)":"Washington Square Park",
-  "610 Rhode Island Street (Potrero Hill)":"Potrero Hill",
-  "375 Laguna Honda Blvd.":"West of Twin Peaks",
-  "2552 Hyde Street":"Russian Hill",
-  "Hyatt Fisherman's Wharf (555 Northpoint Street)":"Fisherman's Wharf",
-  "Market Street Between Noe and Sanchez":"The Castro",
-  "Green & Laguna Streets":"Pacific Heights",
-  "Muni line N- Judah":"San Francisco",
-  "Urban Flowers":"San Francisco",
-  "770 Haight St":"Lower Haight",
-  "Eros":"Lakeshore",
-  "The Café at 2369 Market St.":"The Castro",
-  "Castro St. from Market to 18th St.":"The Castro",
-  "The Fairmont":"San Francisco",
-  "2000 Folsom":"Mission District",
-  "2413 Harrison St.":"Mission District",
-  "Muddy Waters Coffee House":"San Francisco",
-  "Valencia St. from 16th to 17th":"Mission Dolores",
-  "Orphan Andy's":"San Francisco",
-  "Dolores Park":"The Castro",
-  "Casa Lucas Market at 2934 24th St":"Mission District",
-  "BART from Civic Center to 24th St.":"Mid-Market",
-  "Fulsom Street Fair on Fulsom St.":"San Francisco",
-  "Fort Funston":"Fort Funston National Park",
-  "Presidio Church at 130 Fisher Loop":"Presidio",
-  "The Stud":"San Francisco",
-  "Mr. S Leather":"San Francisco",
-  "2866 24th St.":"Mission District",
-  "St. Francis Fountain":"Noe Valley",
-  "The Marsh Theatre (1062 Valencia Street)":"Mission District",
-  "198 Gough Street":"San Francisco",
-  "280 Freeway at Pennsylvania and Mariposa Streets":"Potrero Hill",
-  "18th Street Overpass (Potrero Hill)":"Potrero Hill",
-  "Cost Plus World Market (2552 Taylor Street)":"North Beach",
-  "Vermont Street between 20th and 22nd Streets":"Potrero Hill",
-  "Pacific Heights Towers (2200 Sacramento Street, Pacific Heights)":"Pacific Heights",
-  "St. Elizabeth Apartment House (901 Powell Street at Sacramento)":"Chinatown",
-  "Bush Street at Jones":"Lower Nob Hill",
-  "Lower Haight Street":"Lower Haight",
-  "El Camino Del Mar":"San Francisco",
-  "29th and Delores Street":"Noe Valley",
-  "The 500 Club (500 Guerrero Street, Mission District)":"Mission Dolores",
-  "520-522A Green Street at Grant Street":"North Beach",
-  "516 Green Street":"North Beach",
-  "1200 Washington Street at Taylor Street":"Nob Hill",
-  "Hancock School (940 Filbert Street)":"Russian Hill",
-  "Alamo Square":"Alamo Square",
-  "1821 Alabama St. ":"Bernal Heights",
-  "Cameron House 920 Sacramento St. ":"Chinatown",
-  "AT&T Park":"South of Market",
-  "China Basin on Berry St":"South of Market",
-  "Chouguet's (2500 Washington Street)":"Pacific Heights",
-  "O'Farrell & Jones Streets":"Tenderloin",
-  "500 Club (500 Guerrero)":"Mission Dolores",
-  "Grant Avenue & Union Street":"North Beach",
-  "Mason St from Pine to Sacramento":"Lower Nob Hill",
-  "Powell St. from Geary to Sacramento":"Tenderloin",
-  "Jack Kerouac Alley between Columbus & Grant Streets":"Financial District",
-  "Belli Building (722 Montgomery Street at Washington)":"Financial District",
-  "101 Henry Adams Place, 4th Floor":"South of Market",
-  "Wasteland Store (1600 Haight Street)":"Haight-Ashbury",
-  "Sacramento & Montgomery Streets":"Financial District",
-  "Filbert & Leavenworth Streets":"Russian Hill",
-  "Financial District":"Financial District",
-  "Barbary Coast":"South Beach",
-  "Spreckles Mansion (2080 Washington Street, Pacific Heights)":"Pacific Heights",
-  "Fibert from Hyde to Leavenworth":"Russian Hill",
-  "Columbus and Green":"North Beach",
-  "Embarcadero & Market":"Embarcadero",
-  "2417 Franklin Street":"Pacific Heights",
-  "Japanese Tea Garden, Hagiwara Tea Garden Drive, Golden Gate Park":"Golden Gate Park",
-  "307 Filbert Street":"North Beach",
-  "The Music Concourse (Martin Luther King, Jr. Drive, Golden Gate Park)":"Golden Gate Park",
-  "Pacific Stock Exchange":"San Francisco",
-  "McLaren Lodge":"Golden Gate Park",
-  "Bechelli's Flower Market Café":"San Francisco",
-  "Wine Impression":"San Francisco",
-  "Yerba Buena Gardens":"South of Market",
-  "Tonga Room":"San Francisco",
-  "4015 21st St":"Noe Valley",
-  "24 Hill St.":"Mission District",
-  "21st St & Sanchez":"Noe Valley",
-  "Broadway & Taylor":"Russian Hill",
-  "Mason & Sacramento St":"Nob Hill",
-  "Geary & 27th Ave":"Central Richmond",
-  "Geary & 20th Ave":"Central Richmond",
-  "Broadway and Kearney":"North Beach",
-  "Stage Work, 47 Julian St.":"Mission District",
-  "2nd St. at Townsend St.":"South Beach",
-  "Clay St. at Taylor":"Nob Hill",
-  "Intersection of Lombard and Hyde":"Russian Hill",
-  "555 California":"Tenderloin",
-  "Battery Spencer":"San Francisco",
-  "Fort Baker":"San Francisco",
-  "AT&T Stadium":"South of Market",
-  "Atlas Café, 3049 20th St.":"Mission District",
-  "Irving St. at 9th Ave.":"Inner Sunset",
-  "Grand View Ave.":"San Francisco",
-  "Corbett St.":"San Francisco",
-  "Z Space Studios; 450 Florida St.":"Mission District",
-  "Harrison":"San Francisco",
-  "16th St.":"San Francisco",
-  "Harrison & 20th":"Mission District",
-  "St. Paul's Church (Church Street, Noe Valley)":"Noe Valley",
-  "Maritime Museum, Building 201 (Fort Mason)":"Marina District",
-  "Edinburgh Castle (950 Geary Street)":"Polk Gulch",
-  "S.S. Jeremiah O'Brien":"Fisherman's Wharf",
-  "Bessie Charmichael Elementary School (375 Seventh Street, SOMA)":"South of Market",
-  "Intersection of Grant & Fresno Streets (North Beach)":"North Beach",
-  "West Harbor, Marina District":"East Harbor",
-  "Near Point Lobos, El Camino Del Mar ":"San Francisco",
-  "The Embarcadero/Ferry Building":"Embarcadero",
-  "Christopher's Books (1400 18th Street)":"Potrero Hill",
-  "Bank of America (1455 Stockton Street)":"Russian Hill",
-  "16th and Utah":"Mission District",
-  "Market at Mason":"Mid-Market",
-  "Sutter Stockton Garage":"SFMTA Sutter Stockton Garage",
-  "One Embarcadero Center (Financial District)":"Financial District",
-  "22nd & Wisconsin Streets (Potrero Hill)":"Potrero Hill",
-  "One Thousand Powell Apartments (1000 Powell Street)":"Chinatown",
-  "Pier 3 (The Embarcadero)":"Embarcadero",
-  "Clementina & Sumner Streets":"South of Market",
-  "700 Kansas St.":"Potrero Hill",
-  "770 Haight St.":"Lower Haight",
-  "23rd & Capp Streets (Mission District)":"Mission District",
-  "Merchant Exchange Building":"Financial District",
-  "Stockton Tunnel Southern Approach Overhang (Bush & Stockton Streets, Chinatown)":"Chinatown",
-  "Montgomery and Union St.":"North Beach",
-  "Moscone Convention Center":"San Francisco",
-  "Market & 2nd Streets":"Financial District",
-  "Cow Palace":"Marina District",
-  "2898 Vallejo Street":"Pacific Heights",
-  "Lombard & Laguna Streets (Marina District)":"Cow Hollow",
-  "Ghiradelli Square (900 North Point Street, Fisherman's Wharf)":"Fisherman's Wharf",
-  "Mecca Restaurant (2029 Market Street)":"The Castro",
-  "York Hotel (940 Sutter Street)":"Lower Nob Hill",
-  "1521 Masonic Avenue at Piedmont Street":"Ashbury Heights",
-  "819 Mason Street at Pine":"Lower Nob Hill",
-  "Conzelman Rd at McCollough Rd and down Concelman Rd.":"San Francisco",
-  "Ocean Beach at Lincoln":"San Francisco",
-  "Larkin & Hyde Streets":"San Francisco",
-  "Stockton Tunnel (Stockton Street at Sutter Street)":"San Francisco",
-  "Sacramento & Washington Streets":"San Francisco",
-  "Bush Street (between Grant & Kearny Streets)":"Chinatown",
-  "Sutter Street between Powell and Mason":"San Francisco",
-  "6th Street On-ramp to Highway 280":"San Francisco",
-  "Market & Church St.":"San Francisco",
-  "Washington Square on Filbert & Stockton":"San Francisco",
-  "Kearney St. from Broadway to Pacific":"North Beach",
-  "California St from Taylor to Powell":"Nob Hill",
-  "Embarcadero from Broadway to Folsom":"Embarcadero",
-  "Pierce Street between Pacific & Green Streets":"Pacific Heights",
-  "Montgomery & Vallejo Streets":"North Beach",
-  "60 Spear Street":"South Beach",
-  "Star's Café (55 Golden Gate Avenue at Van Ness)":"Tenderloin",
-  "Belgravia Apartments (795 Sutter Street at Jones)":"Lower Nob Hill",
-  "Presidio (Golden Gate National Recreation Area)":"Golden Gate National Recreation Area",
-  "Bank of America (38th Street at Balboa Street)":"Richmond District",
-  "Cala Foods (California Street and Hyde)":"Nob Hill",
-  "15-17 Fresno Street":"North Beach",
-  "Surf Theater (4520 Irving Street)":"Sunset District",
-  "Geary from 22nd Ave to Arguello":"Central Richmond",
-  "Clement St. from 6th to 7th Ave. ":"Richmond District",
-  "Clement St. from 5th and 7th Ave. ":"Richmond District",
-  "Tank Hill Park":"Tank Hill Park",
-  "Magic Theater (Fort Mason, Golden Gate National Recreation Area)":"San Francisco",
-  "Golden Gate Ave & Jones":"Tenderloin",
-  "Pioneer Park at Coit Tower":"San Francisco",
-  "Hyde St. at Greenwich and Hyde St. at Lombard":"Russian Hill",
-  "Asia Star Fantasy, 1126 Grant Ave.":"Chinatown",
-  "Vallejo Garage Roof (Vallejo at Powell)":"Russian Hill",
-  "Bay St. at Polk":"Russian Hill",
-  "Mission between 3rd and 4th St.":"South of Market",
-  "Grant between Bush and Market":"Chinatown",
-  "Pier 43":"North Beach",
-  "Water work in SF Bay":"San Francisco",
-  "Van Ness and 12th St.":"South of Market",
-  "Dolores Park, 20th St. between Church & Dolores St.":"Dolores Heights",
-  "Laguna Honda Hospital; 375 Laguna Honda Blvd.":"Laguna Honda Hospital and Rehabilitation Center",
-  "Vallejo Street Garage; 766 Vallejo St.":"Russian Hill",
-  "375 Castro St. and 17th between Castro and Diamond St.":"Central Richmond",
-  "20th":"San Francisco",
-  "22nd St.":"San Francisco",
-  "Folsom":"San Francisco",
-  "Clairon Alley between Valencia & Mission St.":"Mission Dolores",
-  "18th Street between Guerrero and Valencia Streets":"Mission Dolores",
-  "Carnelian Room, Bank of America Building (555 California Street, 53rd Floor)":"Financial District",
-  "CCSF Alemany Campus ":"San Francisco",
-  "Hills Brothers Plaza (The Embarcadero at Harrison)":"Embarcadero",
-  "City Light Bookstore (261 Columbus Avenue)":"Financial District",
-  "Fog City Diner (1300 Battery Street)":"Embarcadero",
-  "Prudente's Italian Deli (1462 Grant Ave at Union)":"North Beach",
-  "Rocco's Corner (Columbus Street)":"San Francisco",
-  "St. John's Presbyterian Church (25 Lake Street)":"Richmond District",
-  "Swedenborgian Church (2107 Lyon Street)":"Pacific Heights",
-  "Café Picaro 3120 16th Street":"Mission Dolores",
-  "1462 Grant Avenue, at Union Street":"North Beach",
-  "Intersection of Columbus & Kearney Streets":"Financial District",
-  "500 Block of Pacific Avenue (Chinatown)":"Financial District",
-  "Intersection of Columbus & Mason Streets":"Russian Hill",
-  "Kearny & Pacific Streets":"Financial District",
-  "2800 Scott Street":"Cow Hollow",
-  "Pier 38-40, The Embarcadero":"Embarcadero",
-  "Mt. Davidson":"Mount Davidson",
-  "McDonald's Restaurant (701 3rd Street, SOMA)":"South Beach",
-  "Ferry Plaza":"Embarcadero",
-  "Bowles Franklin Galleries (765 Beach Street, Fisherman's Wharf)":"Fisherman's Wharf",
-  "Foote, Cone & Belding (733 Front Street at Pacific)":"Financial District",
-  "Hotel Majestic (1500 Sutter Street)":"Western Addition",
-  "Marquee Lofts (1000 Van Ness Avenue at Alice B. Tolkas Place)":"Tenderloin",
-  "Citicorp Center (1 Sansome Street at Sutter) ":"Financial District",
-  "Farley's Café (1315 18th Street Near Missouri)":"Potrero Hill",
-  "Blooms Saloon (18th Street between Missouri and Texas Streets)":"Potrero Hill",
-  "Regency Building (1290 Sutter Street)":"Polk Gulch",
-  "Broadway Studios (435 Broadway at Montgomery Street)":"Financial District",
-  "Powell Street":"San Francisco",
-  "Mission Street":"San Francisco",
-  "Pine St. between Market and Montgomery":"San Francisco",
-  "Van Ness between Fell and Lombard":"Civic Center",
-  "California between Leavensworth and Powell":"Nob Hill",
-  "Mission at 1st and 2nd":"South Beach",
-  "California at Larkin":"Polk Gulch",
-  "Califorinia at Jones":"Nob Hill",
-  "Howard St. from Embarcadero to 11 St.":"Embarcadero",
-  "Construction Site in front of 260 Stockton St. at Post St.":"San Francisco",
-  "California St. between Drumm St. and Kearny St.":"Financial District",
-  "Market St. at Embarcadero area":"Embarcadero",
-  "Pine St. between Market and Kearny":"San Francisco",
-  "Front St. between Market and Clay":"Financial District",
-  "San Francisco - Oakland Bay Bridge":"San Francisco",
-  "Bush St. at Stockton St.":"Chinatown",
-  "Powell St at Geary St":"Tenderloin",
-  "1 Market St. Landmark Building":"San Francisco",
-  "Embarcadero between Pier 2 and Harrison":"Embarcadero",
-  "Pier 14":"Embarcadero",
-  "766 Sutter Street":"Lower Nob Hill",
-  "Nina M. Designs (52 2nd Street at Jessie)":"South Beach",
-  "Pacific Stock Exchange (301 Pine Street at Sansome)":"Financial District",
-  "Roof of Cable Car (California at Front Street)":"Financial District",
-  "Sutter-Stockton Garage (330 Sutter Street at Stockton)":"Civic Center",
-  "Washington Square Park (North Beach)":"Washington Square Park",
-  "Merchant Exchange (465 California Street at Leidesdortt)":"Financial District",
-  "Columbus Avenue at Green & Stockton":"North Beach",
-  "Mama's Restaurant (1701 Stockton)":"North Beach",
-  "Powell and Geary Streets (Union Square)":"Tenderloin",
-  "Saks Fifth Avenue (384 Post Street, Union Square)":"San Francisco",
-  "Alamo Square (Hayes Valley)":"Hayes Valley",
-  "Alcoa Building (1 Maritime Plaza)":"Financial District",
-  "Alta Plaza Park (Steiner Street)":"San Francisco",
-  "American Roofing Co. Building (297 Kansas Street, Potrero Hill)":"South of Market",
-  "550 El Camino Del Mar (Seacliff)":"Sea Cliff",
-  "1954 Mason Street (North Beach)":"Russian Hill",
-  "22nd Bet. Carolina & Rhode Island Streets (Potrero Hill)":"Potrero Hill",
-  "New Asia Restaurant (772 Pacific Avenue at Grant)":"Chinatown",
-  "San Francisco Drydock (The Dogpatch)":"Dogpatch",
-  "The Cannery (281 Leavenworth Street, Fisherman's Wharf)":"Tenderloin",
-  "Posrtsmouth Square (Chinatown)":"Financial District",
-  "Pierce St. & Golden Gate Avenue (Hayes Valley)":"Alamo Square",
-  "Nam Yuen Restaurant (740 Washington Street, Chinatown)":"Financial District",
-  "Mirant Energy, LLC (1301 Illinois Street, The Dogpatch)":"Dogpatch",
-  "McAllister & Scott Streets (Hayes Valley)":"Alamo Square",
-  "KGO-TV ABC7 TV Studios (900 Front Street, Waterfront Historic District)":"San Francisco",
-  "San Francisco National Military Cemetary (Lincoln Blvd., The Presidio, Golden Gate National Recreation Center)":"San Francisco",
-  "Silver Restaurant (737 Washington Street, Chinatown)":"Financial District",
-  "Fremont Street Exit of Bay Bridge":"San Francisco",
-  "Folsom & Essex Streets":"South Beach",
-  "Carl & Cole Streets (Cole Valley)":"Cole Valley",
-  "710 Steiner Street (Hayes Valley)":"Alamo Square",
-  "23rd & Iowa Streets (Dogpatch)":"Potrero Hill",
-  "Geary St. from Polk to Larkin":"Polk Gulch",
-  "Victoria Theatre":"San Francisco",
-  "Yerba Buena Island":"Yerba Buena Island",
-  "SPECS' Twelve Adler Museum Café":"San Francisco",
-  "Ocean Beach at Point Lobos":"San Francisco",
-  "Presidio Branch Library":"Pacific Heights",
-  "The Royal Oak":"San Francisco",
-  "Tonic":"San Francisco",
-  "Polk and Northpoint St.":"Fisherman's Wharf",
-  "Hamburger Haven":"San Francisco",
-  "Higher Grounds Coffee House":"San Francisco",
-  "304 Lily St.":"Hayes Valley",
-  "The Magazine at 920 Larkin":"San Francisco",
-  "Sutter & Webster Streets":"Western Addition",
-  "24th Street Mini Park (Mission District)":"Mission District",
-  "Balmy Street (Mission District)":"Mission District",
-  "Hall of Justice":"South of Market",
-  "Ritz-Carlton Hotel (600 Stockton Street)":"Chinatown",
-  "Harrison Street (The Embarcadero)":"Embarcadero",
-  "City Club (155 Sansome Street)":"Financial District",
-  "1 Bush Street":"Financial District",
-  "Washington Street & Waverly Place (Chinatown)":"Chinatown",
-  "Merchant Exchange Building (465 California Street)":"Financial District",
-  "San Francisco Zoo (2701 Sloat Blvd.)":"Lakeshore",
-  "1227 Montgomery Street":"North Beach",
-  "Market Street":"San Francisco",
-  "Epic Roasthouse":"San Francisco",
-  "Grant Ave from Sacramento to Clay":"Chinatown",
-  "Players Arcade at Pier 39":"North Beach",
-  "Coffee Dan's (O'Farrell Street at Powell)":"Tenderloin",
-  "Mandarin Theatre (1021 Grant Avenue)":"Chinatown",
-  "Fomer Hall of Justice (750 Kearny Street at Washington)":"Financial District",
-  "2090 Jackson Street":"Pacific Heights",
-  "Pier 41":"Fisherman's Wharf",
-  "100 Block of Lombard Street":"Russian Hill",
-  "Pier 7/ Embarcadero":"Embarcadero",
-  "700 Block of Jackson Street (Chinatown)":"Chinatown",
-  "900 Block of Grant Avenue (Chinatown)":"Financial District",
-  "Battery Street (The Embarcadero)":"Embarcadero",
-  "Hayes & Polk Streets (Civic Center)":"Civic Center",
-  "Montgomery & Vallejo Streets (Telegraph Hill)":"North Beach",
-  "Sansome Street (The Embarcadero)":"Embarcadero",
-  "200 Block of Sansome Street (Financial District)":"Financial District",
-  "724 Brazil Avenue":"Excelsior",
-  "Firestation #3 (Brazil Avenue and Athens Street)":"Excelsior",
-  "Glen Park Subway Station":"San Francisco",
-  "Golden Gate Park Children's Playground ":"Golden Gate Park",
-  "The San Francisco Bay":"San Francisco Bay",
-  "Golden Gate National Recreation Area":"Golden Gate National Recreation Area",
-  "Hyatt Regency Hotel (5 Embarcadero Center, Financial District)":"Financial District",
-  "San Francisco Fire Station 38 (2150 California Street, Pacific Heights)":"Pacific Heights",
-  "Montgomery Street at Union Street":"North Beach",
-  "Broadway at Osgood Street (North Beach)":"North Beach",
-  "Lombard & Fillmore Streets (Marina District)":"Cow Hollow",
-  "Lombard & Broderick Streets (Marina District)":"Marina District",
-  "Huntington Park (California & Taylor Streets, Nob Hill)":"Nob Hill",
-  "Chestnut & Davisadero Streets (Marina District)":"Marina District",
-  "100 Block of Union Street (Cow Hollow)":"North Beach",
-  "McCovey Point, China Basin Park (24 Willy Mays Plaza)":"South of Market",
-  "Mojito (1337-1339 Grant Avenue)":"North Beach",
-  "Piers 30-32":"Embarcadero",
-  "3567 18th Street":"Mission Dolores",
-  "544 Natoma (SOMA)":"South of Market",
-  "900 Lombard Street":"Russian Hill",
-  "Claude Lane at Bush Street":"Financial District",
-  "Gough & Eddy Streets (Western Addition)":"Western Addition",
-  "22nd Avenue & Balboa Street (Richmond District)":"Central Richmond",
-  "Cybelle's Pizza (1000 Bush Street)":"Lower Nob Hill",
-  "Buena Vista Café (2765 Hyde Street)":"Fisherman's Wharf",
-  "International Studies Academy (993 Vermont Street, Potrero Hill)":"Potrero Hill",
-  "1801 Laguna at Bush":"Western Addition",
-  "SF Chronicle Building (901 Mission St)":"South Beach",
-  "Glide Memorial Church (434 Ellis St)":"Tenderloin",
-  "American Can Company (Between Illinois & Kentucky, 20th and 22nd Streets)":"Potrero Hill",
-  "New Russian Hill Market (1198 Pacific Avenue at Jones)":"Nob Hill",
-  "Firestation #38 (California & Laguna)":"Pacific Heights",
-  "Pleasant Street at Taylor":"Nob Hill",
-  "Lincoln Park":"USS San Francisco Memorial",
-  "Intersection of California & Grant Streets (Richmond District)":"Financial District",
-  "2340 Francisco Street":"Marina District",
-  "Old St. Mary's Church (660 California Street at Grant)":"Financial District",
-  "La Bodega (1332 Grant Avenue at Vallejo)":"North Beach",
-  "The Saloon (1232 Grant Avenue)":"North Beach",
-  "Red's Java House (Pier 30-32, The Embarcadero)":"Embarcadero",
-  "Pier 24":"Embarcadero",
-  "Project Artaud (Florida Street)":"San Francisco",
-  "Carona Heights Park":"The Castro",
-  "422 Oak Street at Laguna":"Hayes Valley",
-  "Under Highway 101 (near Potrero and Cesar Chavez Streets)":"Bernal Heights",
-  "1007 Gough Street":"Western Addition",
-  "California Palace of the Legion of Honor (34th Avenue & Clement, Lincoln Park)":"San Francisco",
-  "Ernie's Restaurant (847 Montgomery Street)":"Financial District",
-  "Mission San Juan Bautista (2nd & Mariposa Streets)":"San Francisco",
-  "Park Hill Sanatorium (351 Buena Vista Avenue East)":"Buena Vista",
-  "San Francisco Hilton (333 O'Farrell Street)":"Tenderloin",
-  "Lombard Street between Hyde and Leavenworth":"Russian Hill",
-  "Hyde Street Pier":"Fisherman's Wharf",
-  "Grant Street at Pacific Avenue":"Chinatown",
-  "Victor's Restaurant, The Westin St. Francis Hotel (335 Powell Street)":"Lower Nob Hill",
-  "Spring Valley School (1451 Jackson Street)":"Nob Hill",
-  "766 Vallejo Street at Stockton Street (North Beach)":"Russian Hill",
-  "Cable Car Signal Box (California Street at Powell Street)":"Chinatown",
-  "772 Commercial Street at Kearney":"Financial District",
-  "835-865 Market Street at 5th Street":"Tenderloin",
-  "312 Fillmore Street":"Lower Haight",
-  "Aladdin Terrace (off of Taylor Street, Between Filbert and Union)":"Russian Hill",
-  "Albert S. Samuels Clock (856 Market Street between Powell and Stockton)":"Tenderloin",
-  "Broadway Tunnel (Broadway between Powell and Larkin)":"Russian Hill",
-  "Burritt Alley (Off Bush Street, between Powell and Stockton Streets)":"Lower Nob Hill",
-  "Gabbiano's Restaurant (Ferry Building)":"Embarcadero",
-  "Intersection of Fulton & 6th Streets (Chinatown)":"Inner Richmond",
-  "Public Health Service Hospital (Presidio, Golden Gate National Recreation Area)":"Presidio",
-  "Vaillancourt Fountain (Justin Herman Plaza)":"Embarcadero",
-  "Washington Square Park (Filbert, between Stockton and Powell)":"North Beach"
-};
-// function getLocationMap() {
-//   var url = "localhost:8000/locationToNeighborhood.json";
-//   var request = new XMLHttpRequest();
+getLocationMap();
 
-//   request.addEventListener('load', locationHoodComplete);
-//   request.open("get", url, true);
-//   request.send();
-// }
+function getLocationMap() {
+  var url = "https://raw.githubusercontent.com/jhaider/film-locations/master/json/locationToNeighborhood.json";
+  var request = new XMLHttpRequest();
 
-// function locationHoodComplete(event) {
-//   locationToNeighborhood = JSON.parse(this.responseText);
-// }
+  request.addEventListener('load', locationHoodComplete);
+  request.open("get", url, true);
+  request.send();
+}
 
-// getFilmData();
+function locationHoodComplete(event) {
+  locationToNeighborhood = JSON.parse(this.responseText);
+  d3.json("json/film_locations.json", function(error, filmData) {
+    if (error) throw error;
+    getSources(filmData);
+    buildDiagramForYear("2015");
+    display.innerHTML = "Year Displayed: 2015";
+  });
+}
 
-// function getFilmData() {
-//   var url = "https://data.sfgov.org/api/views/yitu-d5am/rows.json";
-//   var request = new XMLHttpRequest();
-
-//   request.addEventListener('load', filmRequestComplete);
-//   request.open("get", url, true);
-//   request.send();
-// }
-
-// function filmRequestComplete(event) {
-//   filmData = JSON.parse(this.responseText);
-//   // getLocationMap();
-//   fillFilmsAndLocations();
-// }
 var scrubber = new ScrubberView();
 var minYear, maxYear;
-var display = document.createElement('p');
+var years = null;
+var display = document.createElement('div');
+document.body.appendChild(display);
 
 function initializeScrubber() {
   document.body.appendChild(scrubber.elt);
-  scrubber.min(minYear * 1);// 0
-  scrubber.max(maxYear * 1); // 1
-  scrubber.step(1);  // 0
-  scrubber.value(2014); // 0
+  scrubber.min(1);
+  scrubber.max(years.length);
+  scrubber.step(1);
+  scrubber.value(years.length);
   scrubber.orientation('horizontal'); // 'horizontal'
-  document.body.appendChild(display);
-  display.innerHTML = scrubber.value();
+  // scrubber.style["width"] = "400px";
 }
 
 scrubber.onValueChanged = function (value) {
-  buildDiagramForYear(value + "");
-  display.innerHTML = scrubber.value();
+  buildDiagramForYear(years[value - 1]);
+  display.innerHTML = "Year Displayed: " + years[value - 1];
 }
-
-buildDiagramForYear("2014");
 
 function buildDiagramForYear(year) {
   // Clear previous diagram
   d3.select("svg").remove();
-
   svg = d3.select("body").append("svg")
     .attr("width", diameter)
     .attr("height", diameter)
@@ -952,61 +135,28 @@ function buildDiagramForYear(year) {
   link = svg.append("g").selectAll(".link");
   node = svg.append("g").selectAll(".node");
 
-  d3.json("json/film_locations.json", function(error, filmData) {
-    if (error) throw error;
+  if (mapByYear[year]) {
+    var nodes = cluster.nodes(packageHierarchy(mapByYear[year])),
+        links = packageImports(nodes);
 
-    if (!mapByYear) {
-      getSources(filmData);
-    }
+    link = link
+        .data(bundle(links))
+      .enter().append("path")
+        .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
+        .attr("class", "link")
+        .attr("d", line);
 
-    if (mapByYear[year]) {
-      var nodes = cluster.nodes(packageHierarchy(mapByYear[year])),
-          links = packageImports(nodes);
-
-      link = link
-          .data(bundle(links))
-        .enter().append("path")
-          .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
-          .attr("class", "link")
-          .attr("d", line);
-
-      node = node
-          .data(nodes.filter(function(n) { return !n.children; }))
-        .enter().append("text")
-          .attr("class", "node")
-          .attr("dy", ".31em")
-          .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
-          .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-          .text(function(d) { return d.key; })
-          .on("mouseover", mouseovered)
-          .on("mouseout", mouseouted);
-    }
-  });
-}
-
-function mouseovered(d) {
-  node
-      .each(function(n) { n.target = n.source = false; });
-
-  link
-      .classed("link--target", function(l) { if (l.target === d) return l.source.source = true; })
-      .classed("link--source", function(l) { if (l.source === d) return l.target.target = true; })
-    .filter(function(l) { return l.target === d || l.source === d; })
-      .each(function() { this.parentNode.appendChild(this); });
-
-  node
-      .classed("node--target", function(n) { return n.target; })
-      .classed("node--source", function(n) { return n.source; });
-}
-
-function mouseouted(d) {
-  link
-      .classed("link--target", false)
-      .classed("link--source", false);
-
-  node
-      .classed("node--target", false)
-      .classed("node--source", false);
+    node = node
+        .data(nodes.filter(function(n) { return !n.children; }))
+      .enter().append("text")
+        .attr("class", "node")
+        .attr("dy", ".31em")
+        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+        .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+        .text(function(d) { return d.key; })
+        .on("mouseover", mouseovered)
+        .on("mouseout", mouseouted);
+  }
 }
 
 d3.select(self.frameElement).style("height", diameter + "px");
@@ -1028,18 +178,18 @@ function getSources(filmData) {
       if (year > maxYear) {
         maxYear = year;
       }
-
       if (!linkMap[year]) {
         linkMap[year] = {};
       }
-
+      // Initialize
       if (!linkMap[year][title]) {
         linkMap[year][title] = {name: title, "imports": []};
       }
+      // Check duplicate locations
       if (linkMap[year][title].imports.indexOf(location) == -1) {
         linkMap[year][title].imports.push(location);
       }
-
+      // Initialize
       if (!linkMap[year][location]) {
         linkMap[year][location] = {name: location, "imports": []};
       }
@@ -1053,51 +203,8 @@ function getSources(filmData) {
     });
   }
 
+  years = Object.keys(mapByYear);
+
   initializeScrubber();
 }
-
-function packageHierarchy(filmData) {
-  var map = {};
-  var links = filmData;
-
-  function find(name, data) {
-    var node = map[name], i;
-    if (!node) {
-      node = map[name] = data || {name: name, children: []};
-      if (name.length) {
-        node.parent = find(name.substring(0, i = name.lastIndexOf("..")));
-        node.parent.children.push(node);
-        node.key = name.substring(i + 2);
-      }
-    }
-    return node;
-  }
-
-  links.forEach(function(d) {
-    find(d.name, d);
-  });
-
-  return map[""];
-}
-
-// Return a list of imports for the given array of nodes.
-function packageImports(nodes) {
-  var map = {},
-      imports = [];
-
-  // Compute a map from name to node.
-  nodes.forEach(function(d) {
-    map[d.name] = d;
-  });
-
-  // For each import, construct a link from the source to target node.
-  nodes.forEach(function(d) {
-    if (d.imports) d.imports.forEach(function(i) {
-      imports.push({source: map[d.name], target: map[i]});
-    });
-  });
-
-  return imports;
-}
-
 </script>
