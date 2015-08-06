@@ -49,6 +49,8 @@
 </style>
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+<script src="http://rawgithub.com/desmosinc/scrubber/master/scrubber.js"></script>
+<link rel="stylesheet" href="http://rawgithub.com/desmosinc/scrubber/master/scrubber.css">
 <script>
 
 var diameter = 960,
@@ -915,6 +917,25 @@ var locationToNeighborhood = //null;
 //   // getLocationMap();
 //   fillFilmsAndLocations();
 // }
+var scrubber = new ScrubberView();
+var minYear, maxYear;
+var display = document.createElement('p');
+
+function initializeScrubber() {
+  document.body.appendChild(scrubber.elt);
+  scrubber.min(minYear * 1);// 0
+  scrubber.max(maxYear * 1); // 1
+  scrubber.step(1);  // 0
+  scrubber.value(2014); // 0
+  scrubber.orientation('horizontal'); // 'horizontal'
+  document.body.appendChild(display);
+  display.innerHTML = scrubber.value();
+}
+
+scrubber.onValueChanged = function (value) {
+  buildDiagramForYear(value + "");
+  display.innerHTML = scrubber.value();
+}
 
 buildDiagramForYear("2014");
 
@@ -938,26 +959,28 @@ function buildDiagramForYear(year) {
       getSources(filmData);
     }
 
-    var nodes = cluster.nodes(packageHierarchy(mapByYear[year])),
-        links = packageImports(nodes);
+    if (mapByYear[year]) {
+      var nodes = cluster.nodes(packageHierarchy(mapByYear[year])),
+          links = packageImports(nodes);
 
-    link = link
-        .data(bundle(links))
-      .enter().append("path")
-        .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
-        .attr("class", "link")
-        .attr("d", line);
+      link = link
+          .data(bundle(links))
+        .enter().append("path")
+          .each(function(d) { d.source = d[0], d.target = d[d.length - 1]; })
+          .attr("class", "link")
+          .attr("d", line);
 
-    node = node
-        .data(nodes.filter(function(n) { return !n.children; }))
-      .enter().append("text")
-        .attr("class", "node")
-        .attr("dy", ".31em")
-        .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
-        .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-        .text(function(d) { return d.key; })
-        .on("mouseover", mouseovered)
-        .on("mouseout", mouseouted);
+      node = node
+          .data(nodes.filter(function(n) { return !n.children; }))
+        .enter().append("text")
+          .attr("class", "node")
+          .attr("dy", ".31em")
+          .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + (d.y + 8) + ",0)" + (d.x < 180 ? "" : "rotate(180)"); })
+          .style("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+          .text(function(d) { return d.key; })
+          .on("mouseover", mouseovered)
+          .on("mouseout", mouseouted);
+    }
   });
 }
 
@@ -991,12 +1014,20 @@ d3.select(self.frameElement).style("height", diameter + "px");
 function getSources(filmData) {
   var linkMap = {};
   mapByYear = {};
+  minYear = "2222";
+  maxYear = "0";
 
   filmData["data"].forEach(function (row) {
     if (row[LOCATION_INDEX]) {
       var title = MOVIE_STRING + row[TITLE_INDEX];
       var location = LOCATION_STRING + locationToNeighborhood[row[LOCATION_INDEX]];
       var year = row[YEAR_INDEX];
+      if (year < minYear) {
+        minYear = year;
+      }
+      if (year > maxYear) {
+        maxYear = year;
+      }
 
       if (!linkMap[year]) {
         linkMap[year] = {};
@@ -1021,6 +1052,8 @@ function getSources(filmData) {
       return linkMap[year][key];
     });
   }
+
+  initializeScrubber();
 }
 
 function packageHierarchy(filmData) {
